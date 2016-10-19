@@ -1,4 +1,4 @@
-#include "parse.c"
+#include "parse.h"
 #include "raycaster.c"
 
 int main(int c, char** argv) {
@@ -26,7 +26,7 @@ int main(int c, char** argv) {
     Object objects[129];
     Light lights[129];
     read_scene(argv[3],objects,lights);
-    printf("%f %f %f %f %f",lights[0].radA0,lights[0].radA1,lights[0].radA2,lights[0].angA0,lights[0].color[1]);
-    //raycast(objects,argv[1],argv[2],argv[4],lights);
+    printf("%f ",objects[1].sphere.diffuse[0]);
+    raycast(objects,lights,argv[1],argv[2],argv[4]);
     return 0;
 }
