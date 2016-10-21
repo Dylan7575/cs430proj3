@@ -26,7 +26,7 @@ int main(int c, char** argv) {
     Object objects[129];
     Light lights[129];
     read_scene(argv[3],objects,lights);
-    printf("%f ",objects[1].sphere.diffuse[0]);
+    //printf("%f ",objects[2].plane.diffuse[1]);
     raycast(objects,lights,argv[1],argv[2],argv[4]);
     return 0;
 }

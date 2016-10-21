@@ -4,10 +4,14 @@ typedef struct{
     int b;
 
 }Pixel;
-Pixel illuminate(Object object,double t_value,double *rd,double*ro,Light* lights,Object* objects);
+void illuminate(Object object,double t_value,double *rd,double*ro,Light* lights,Object* objects,int pixindex,Pixel* pix);
 
+Pixel * pix;
 static inline double sqr(double v){
     return v*v;
+}
+double v3_len(double* vect){
+    return sqrt(sqr(vect[0])+sqr(vect[1])+vect[2]);
 }
 void vector_copy(double* vector1, double* vector2){
     vector2[0]=vector1[0];
@@ -48,11 +52,11 @@ double distance(double *p1, double *p2) {
 
 static inline double frad(double lightDistance, double a0, double a1, double a2) {
 
-    if (lightDistance == INFINITY) {
+    if (lightDistance == INFINITY||a0==0.0&&a1==0.0&&a2==0.0) {
         return 1.0;
     }
     else {
-        return 1/(a2 * sqr(lightDistance) + (a1 * lightDistance) + a0);
+        return 1/(a2 * sqr(lightDistance) + a1 * lightDistance + a0);
     }
 }
 double clamp(double color){
@@ -64,12 +68,13 @@ double clamp(double color){
     }
     return color;
 }
-static inline double fang(Light light,double* direction) {
-    double cosA = v3_dot(light.direction, direction);
-    cosA = ((cosA * 3.14159265358979323846) / 180);
-    if (isnumber(light.angA0) || isnumber(light.direction)) {
+static inline double fang(Light light,double*ron) {
+    if (light.theta==0) {
         return 1;
-    } else if (cosA < light.theta) {
+    }
+    double cosA = v3_dot(light.direction,ron);
+    cosA = cosA *(180 /  3.14159265358979323846);//converting to degrees from radians
+   if (cosA < light.theta) {
         return 0;
     } else {
         double ret = pow(cosA, light.angA0);
@@ -87,35 +92,39 @@ static inline void reflect(double *L, double *N, double *R) {
 
 static inline void specularReflection(double factor, double *L, double *R,
                                       double *N, double *V, double *lColor,
-                                      double *oColor, double *spec) {
+                                      double *oColor) {
     double VR = v3_dot(V, R);
     double NL = v3_dot(N, L);
-    if (VR > 0 && NL > 0) {
-        double temp = pow(VR, factor);
+    if (VR > 0 && NL > 0) {   //if dot product of the camera ray and the reflection and the dot product of the normal and rdn are positive go ahead
+        double temp = pow(VR, factor);//factor is shinieness
         double temp2[3];
-        temp2[0] = lColor[0] * oColor[0]*temp;
-        temp2[1] = lColor[1] * oColor[1]*temp;
-        temp2[2] = lColor[2] * oColor[1]*temp;
-        vector_copy(temp2,spec);
+        temp2[0] = lColor[0] * oColor[0];
+        temp2[1] = lColor[1] * oColor[1];
+        temp2[2] = lColor[2] * oColor[1];
+        v3_scale(temp2,temp,oColor);//scaling by shiniesness factor
+
     } else {
-        spec[0] = 0;
-        spec[1] = 0;
-        spec[2] = 0;
+        oColor[0] = 0;
+        oColor[1] = 0;
+        oColor[2] = 0;
     }
 }
 static inline void diffuseReflection(double *N, double *L, double *lColor,
-                                     double *oColor, double *diff) {
-    double temp = v3_dot(N, L);
+                                     double *oColor) {
+    double temp = v3_dot(N, L);//getting dot product
     if (temp > 0) {
         double temp2[3];
-        temp2[0] = lColor[0] * oColor[0]*temp;
-        temp2[1] = lColor[1] * oColor[1]*temp;
-        temp2[2] = lColor[2] * oColor[1]*temp;
-        vector_copy(temp2,diff);
+        temp2[0] = lColor[0] * oColor[0];//multiplying by light color
+        //printf("%f\n",temp2[0]);
+        temp2[1] = lColor[1] * oColor[1];
+        //printf("%f\n",temp2[1]);
+        temp2[2] = lColor[2] * oColor[2];
+        //printf("%f\n",temp2[2]);
+        v3_scale(temp2,temp,oColor);//scaling the colors by the dotproduct of the normal and the new ray direction
     } else {
-        diff[0] = 0;
-        diff[1] = 0;
-        diff[2] = 0;
+        oColor[0] = 0;
+        oColor[1] = 0;
+        oColor[2] = 0;
     }
 }
 
