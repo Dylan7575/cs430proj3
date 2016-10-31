@@ -1,5 +1,5 @@
 all:
-    gcc main.c -lm -o raytracer
+	gcc main.c -lm -o raytracer
 
 clean:
-    rm -rf raytracer *.o *~
+	rm -rf raytracer *.o *~
